@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST HUB - Lab Test Bookings & Home Collection</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 sm:pb-0">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span class="text-xs font-bold text-emerald-400">TEST HUB Secure Mobile Cloud</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="switchView('patient')" id="btnPatientView" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white transition shadow">Patient App</button>
+                <button onclick="checkAdminAccess()" id="btnAdminView" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 transition">Admin Panel</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6">
+        
+        <!-- ================= PATIENT VIEW ================= -->
+        <div id="patientView" class="space-y-6">
+            <!-- Header Banner -->
+            <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row justify-between items-center relative overflow-hidden">
+                <div class="relative z-10">
+                    <span class="bg-white/20 backdrop-blur px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider">6 Certified Partner Labs</span>
+                    <h1 class="text-3xl font-extrabold mt-2 flex items-center gap-2"><i class="fa-solid fa-flask-vial"></i> TEST HUB</h1>
+                    <p class="text-blue-100 text-xs sm:text-sm mt-1">Book lab tests & health packages with free home collection.</p>
+                </div>
+                <div class="mt-4 sm:mt-0 relative z-10 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/20 text-xs font-bold flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-white"><i class="fa-solid fa-phone"></i></div>
+                    <div>
+                        <span class="text-[9px] text-blue-200 block uppercase">Helpline</span>
+                        <span>99960 05529</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search & Quick Filters -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+                    <input type="text" id="testSearchInput" oninput="filterTests()" placeholder="Search tests or health packages..." class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium">
+                </div>
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+                    <button onclick="quickFilter('All')" class="px-4 py-2.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-xl whitespace-nowrap">All</button>
+                    <button onclick="quickFilter('Package')" class="px-4 py-2.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-xl whitespace-nowrap">Health Packages</button>
+                    <button onclick="quickFilter('Thyroid')" class="px-4 py-2.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl whitespace-nowrap">Thyroid</button>
+                    <button onclick="quickFilter('Blood')" class="px-4 py-2.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-xl whitespace-nowrap">Blood</button>
+                </div>
+            </div>
+
+            <!-- Tests Grid -->
+            <div id="patientTestsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Booking Form Section -->
+            <div id="bookingSection" class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-slate-100 hidden">
+                <div class="flex justify-between items-center mb-5 border-b pb-3">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-truck-medical text-blue-600"></i> Home Collection Booking
+                    </h2>
+                    <button onclick="cancelBookingForm()" class="text-slate-400 hover:text-slate-600 text-xs font-bold"><i class="fa-solid fa-xmark text-lg"></i> Cancel</button>
+                </div>
+                <div class="space-y-4">
+                    <div id="selectedTestSummary" class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl text-xs"></div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Patient Name</label>
+                            <input type="text" id="patientName" placeholder="Enter full name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Phone Number</label>
+                            <input type="tel" id="patientPhone" placeholder="10-digit mobile number" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Complete Address (For Home Pickup)</label>
+                        <textarea id="patientAddress" rows="2" placeholder="House No, Landmark, Area, City..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Collection Date</label>
+                            <input type="date" id="bookingDate" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase">Time Slot</label>
+                            <select id="bookingSlot" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                                <option>06:00 AM - 08:00 AM (Early Morning)</option>
+                                <option>08:00 AM - 10:00 AM (Morning)</option>
+                                <option>10:00 AM - 12:00 PM (Late Morning)</option>
+                                <option>04:00 PM - 06:00 PM (Evening)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-3 border-t">
+                        <button onclick="cancelBookingForm()" class="px-5 py-2.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">Cancel</button>
+                        <button onclick="confirmBooking()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow">Confirm Booking</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile-Friendly Booking Status Tracker -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Track Booking Status</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Enter your 10-digit mobile number to view active home collections.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="tel" id="checkPhone" placeholder="Enter 10-digit mobile number..." class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm flex-grow">
+                    <button onclick="checkBookingStatus()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow">Track Now</button>
+                </div>
+                <div id="statusResult"></div>
+            </div>
+        </div>
+
+        <!-- ================= ADMIN VIEW ================= -->
+        <div id="adminView" class="space-y-6 hidden">
+            <!-- Admin Dashboard Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Admin Control Center</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Manage tests, health packages, pricing & phlebo assignments.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openAddTestModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Add Test / Package
+                    </button>
+                    <button onclick="adminLogout()" class="px-3.5 py-2.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Logout</button>
+                </div>
+            </div>
+
+            <!-- Metric Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Total Items</p>
+                    <h3 id="adminTotalTests" class="text-xl font-extrabold text-slate-900 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Total Bookings</p>
+                    <h3 id="adminTotalBookings" class="text-xl font-extrabold text-slate-900 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Pending</p>
+                    <h3 id="adminPendingBookings" class="text-xl font-extrabold text-amber-600 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Total Revenue</p>
+                    <h3 id="adminTotalRevenue" class="text-xl font-extrabold text-emerald-600 mt-1">₹0</h3>
+                </div>
+            </div>
+
+            <!-- Manage Tests & Packages Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                    <h2 class="text-base font-bold text-slate-900">Manage Tests & Packages Catalog</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider">
+                                <th class="p-3.5">Name & Category</th>
+                                <th class="p-3.5">Specimen & Tube</th>
+                                <th class="p-3.5">Base Prices (Sample)</th>
+                                <th class="p-3.5 text-right">Actions (Edit / Delete)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTestsTableBody" class="divide-y divide-slate-100 text-xs">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bookings Management Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <h2 class="text-base font-bold text-slate-900">Patient Bookings & Phlebo Assignment</h2>
+                    <input type="text" id="adminSearchBooking" oninput="renderAdminBookings()" placeholder="Search bookings..." class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-full sm:w-64">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wider">
+                                <th class="p-3.5">ID & Slot</th>
+                                <th class="p-3.5">Patient & Address</th>
+                                <th class="p-3.5">Test/Package & Lab</th>
+                                <th class="p-3.5">Assign Phlebo</th>
+                                <th class="p-3.5">Status</th>
+                                <th class="p-3.5 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminBookingsTableBody" class="divide-y divide-slate-100 text-xs">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar for Mobile -->
+    <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2.5 flex justify-around items-center z-40 shadow-lg">
+        <button onclick="switchView('patient')" class="flex flex-col items-center text-blue-600 text-[10px] font-bold">
+            <i class="fa-solid fa-house text-lg mb-0.5"></i> Home
+        </button>
+        <button onclick="scrollToTracker()" class="flex flex-col items-center text-slate-500 text-[10px] font-bold">
+            <i class="fa-solid fa-magnifying-glass text-lg mb-0.5"></i> Track
+        </button>
+        <button onclick="checkAdminAccess()" class="flex flex-col items-center text-slate-500 text-[10px] font-bold">
+            <i class="fa-solid fa-user-shield text-lg mb-0.5"></i> Admin
+        </button>
+    </nav>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-lock text-blue-600"></i> Admin Access</h3>
+                <button onclick="closeAdminLoginModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-600 mb-1 uppercase">Admin Gmail</label>
+                    <input type="email" id="adminEmailInput" value="admin@testhub.com" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-600 mb-1 uppercase">Password</label>
+                    <input type="password" id="adminPasswordInput" value="admin123" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeAdminLoginModal()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">Cancel</button>
+                <button onclick="verifyAdminLogin()" class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Details & Lab Choice Modal -->
+    <div id="testDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 id="modalTestTitle" class="text-base font-bold text-slate-900"></h3>
+                <button onclick="closeTestModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="bg-slate-50 p-3.5 rounded-2xl grid grid-cols-2 gap-3 text-xs border border-slate-100">
+                <div><span class="text-slate-400 block font-bold text-[10px]">SPECIMEN</span><span id="modalSpecimen" class="font-bold text-slate-700"></span></div>
+                <div><span class="text-slate-400 block font-bold text-[10px]">TUBE SPEC</span><span id="modalTube" class="font-bold text-slate-700"></span></div>
+                <div><span class="text-slate-400 block font-bold text-[10px]">FASTING</span><span id="modalFasting" class="font-bold text-slate-700"></span></div>
+                <div><span class="text-slate-400 block font-bold text-[10px]">REPORT TAT</span><span id="modalTat" class="font-bold text-slate-700"></span></div>
+            </div>
+            <div>
+                <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Included Tests / Parameters</h4>
+                <div id="modalParameters" class="space-y-1.5 text-xs max-h-36 overflow-y-auto pr-1"></div>
+            </div>
+            <div>
+                <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Select Partner Lab & Price</h4>
+                <div id="modalLabsList" class="space-y-2.5"></div>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="closeTestModal()" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Test Modal with AI & Type Selector -->
+    <div id="addTestModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 id="modalHeaderTitle" class="text-base font-bold text-slate-900">Add Test or Health Package</h3>
+                <button onclick="closeAddTestModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <input type="hidden" id="editTestId" value="">
+
+            <div class="space-y-3 text-xs">
+                <!-- Type Selector -->
+                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                    <button type="button" id="typeTestBtn" onclick="setItemType('Test')" class="py-2 bg-white text-blue-600 font-bold rounded-lg shadow-sm transition">Single Test</button>
+                    <button type="button" id="typePkgBtn" onclick="setItemType('Package')" class="py-2 text-slate-600 font-semibold rounded-lg transition">Health Package</button>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="font-bold text-slate-600 uppercase" id="nameLabelText">Test Name</label>
+                        <button type="button" onclick="aiAutoFillDetails()" class="px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-lg shadow-sm hover:opacity-90 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Auto-Fill
+                        </button>
+                    </div>
+                    <input type="text" id="newTestName" placeholder="e.g. Full Body Health Checkup or CBC" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1">Thyrocare (₹)</label>
+                        <input type="number" id="pThyrocare" placeholder="999" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1">Dr. Lal (₹)</label>
+                        <input type="number" id="pLal" placeholder="1299" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1">Agilus (₹)</label>
+                        <input type="number" id="pAgilus" placeholder="1199" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1">Accuprobe (₹)</label>
+                        <input type="number" id="pAccuprobe" placeholder="899" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1">Kos Lab (₹)</label>
+                        <input type="number" id="pKos" placeholder="949" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1">Metropolis (₹)</label>
+                        <input type="number" id="pMetropolis" placeholder="1399" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1 uppercase">Specimen</label>
+                        <input type="text" id="newSpecimen" placeholder="Serum / Whole Blood" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 block mb-1 uppercase">Tube Spec</label>
+                        <input type="text" id="newTube" placeholder="Multiple Vials" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1 uppercase">Fasting Requirement</label>
+                    <input type="text" id="newFasting" placeholder="10-12 hours fasting mandatory" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+
+                <div>
+                    <label class="font-bold text-slate-600 block mb-1 uppercase">Included Parameters / Tests (comma separated)</label>
+                    <textarea id="newParams" rows="2" placeholder="CBC, Lipid Profile, LFT, KFT, Thyroid, Vitamin D..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeAddTestModal()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">Cancel</button>
+                <button onclick="saveNewTest()" class="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const ADMIN_CONFIG = {
+            email: "admin@testhub.com",
+            password: "admin123"
+        };
+
+        let selectedItemType = "Test";
+
+        let testsLibrary = JSON.parse(localStorage.getItem('testhub_final_items')) || [
+            {
+                id: 1,
+                category: "Package",
+                name: "Full Body Health Checkup - 75 Tests",
+                specimen: "Serum & Whole Blood",
+                tube: "Multiple Vials (SST & EDTA)",
+                fasting: "10-12 hours overnight fasting mandatory",
+                tat: "24 Hours",
+                parameters: ["Complete Blood Count (CBC)", "Lipid Profile", "Liver Function Test (LFT)", "Kidney Function Test (KFT)", "Thyroid Profile (T3, T4, TSH)", "HbA1c", "Vitamin D & B12", "Iron Profile", "Urine Routine"],
+                prices: { "Thyrocare": 999, "Dr. Lal PathLabs": 1499, "Agilus": 1299, "Accuprobe": 899, "Kos Lab": 949, "Metropolis": 1599 }
+            },
+            {
+                id: 2,
+                category: "Test",
+                name: "Thyroid Profile (T3, T4, TSH)",
+                specimen: "Serum",
+                tube: "Yellow Top SST Tube",
+                fasting: "No fasting required",
+                tat: "12 Hours",
+                parameters: ["Total Triiodothyronine (T3)", "Total Thyroxine (T4)", "Thyroid Stimulating Hormone (TSH)"],
+                prices: { "Thyrocare": 300, "Dr. Lal PathLabs": 450, "Agilus": 399, "Accuprobe": 250, "Kos Lab": 280, "Metropolis": 499 }
+            },
+            {
+                id: 3,
+                category: "Test",
+                name: "Complete Blood Count (CBC)",
+                specimen: "Whole Blood",
+                tube: "Lavender Top EDTA Tube",
+                fasting: "No fasting required",
+                tat: "12 Hours",
+                parameters: ["Hemoglobin", "Total Leukocyte Count (TLC)", "RBC Count", "Platelet Count", "PCV / MCV"],
+                prices: { "Thyrocare": 250, "Dr. Lal PathLabs": 350, "Agilus": 300, "Accuprobe": 200, "Kos Lab": 220, "Metropolis": 399 }
+            }
+        ];
+
+        let bookings = JSON.parse(localStorage.getItem('testhub_final_bookings')) || [
+            {
+                id: "TH-492018",
+                patientName: "Pardeep Kumar",
+                phone: "9996006529",
+                address: "Jandli, Ambala",
+                date: "2026-10-21",
+                slot: "06:00 AM - 08:00 AM",
+                testName: "Full Body Health Checkup - 75 Tests",
+                labName: "Thyrocare",
+                price: 999,
+                phlebo: "Ramesh Kumar",
+                status: "Pending"
+            }
+        ];
+
+        let selectedCartItem = null;
+        let activeQuickCategory = "All";
+
+        function saveToStorage() {
+            localStorage.setItem('testhub_final_items', JSON.stringify(testsLibrary));
+            localStorage.setItem('testhub_final_bookings', JSON.stringify(bookings));
+        }
+
+        function switchView(view) {
+            if(view === 'patient') {
+                document.getElementById('patientView').classList.remove('hidden');
+                document.getElementById('adminView').classList.add('hidden');
+                document.getElementById('btnPatientView').className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white transition shadow";
+                document.getElementById('btnAdminView').className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 transition";
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                checkAdminAccess();
+            }
+        }
+
+        function scrollToTracker() {
+            switchView('patient');
+            document.getElementById('checkPhone').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function checkAdminAccess() {
+            // Using sessionStorage so password is NEVER permanently saved across browser closes
+            if(sessionStorage.getItem('testhub_secure_auth') === 'true') {
+                document.getElementById('patientView').classList.add('hidden');
+                document.getElementById('adminView').classList.remove('hidden');
+                document.getElementById('btnAdminView').className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white transition shadow";
+                document.getElementById('btnPatientView').className = "px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 transition";
+                renderAdminDashboard();
+            } else {
+                document.getElementById('adminLoginModal').classList.remove('hidden');
+            }
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('adminLoginModal').classList.add('hidden');
+        }
+
+        function verifyAdminLogin() {
+            const email = document.getElementById('adminEmailInput').value.trim();
+            const pass = document.getElementById('adminPasswordInput').value.trim();
+
+            if(email === ADMIN_CONFIG.email && pass === ADMIN_CONFIG.password) {
+                // Stored strictly in sessionStorage (deletes when tab/browser closes)
+                sessionStorage.setItem('testhub_secure_auth', 'true');
+                closeAdminLoginModal();
+                checkAdminAccess();
+            } else {
+                alert("Incorrect Admin Credentials!");
+            }
+        }
+
+        function adminLogout() {
+            sessionStorage.removeItem('testhub_secure_auth');
+            switchView('patient');
+        }
+
+        function setItemType(type) {
+            selectedItemType = type;
+            const tBtn = document.getElementById('typeTestBtn');
+            const pBtn = document.getElementById('typePkgBtn');
+            const label = document.getElementById('nameLabelText');
+
+            if(type === 'Test') {
+                tBtn.className = "py-2 bg-white text-blue-600 font-bold rounded-lg shadow-sm transition";
+                pBtn.className = "py-2 text-slate-600 font-semibold rounded-lg transition";
+                label.innerText = "Test Name";
+                document.getElementById('newTestName').placeholder = "e.g. Lipid Profile or CBC";
+            } else {
+                pBtn.className = "py-2 bg-white text-indigo-600 font-bold rounded-lg shadow-sm transition";
+                tBtn.className = "py-2 text-slate-600 font-semibold rounded-lg transition";
+                label.innerText = "Health Package Name";
+                document.getElementById('newTestName').placeholder = "e.g. Fever Profile / Advanced Diabetes Package";
+            }
+        }
+
+        function aiAutoFillDetails() {
+            const name = document.getElementById('newTestName').value.trim();
+            if(!name) {
+                alert("Please enter a test or package name first!");
+                return;
+            }
+
+            const lower = name.toLowerCase();
+            if(selectedItemType === 'Package' || lower.includes('package') || lower.includes('checkup') || lower.includes('profile')) {
+                document.getElementById('newSpecimen').value = "Serum & Whole Blood";
+                document.getElementById('newTube').value = "Multiple Vials (SST & EDTA)";
+                document.getElementById('newFasting').value = "10-12 hours overnight fasting mandatory";
+                document.getElementById('newParams').value = "Complete Blood Count (CBC), Lipid Profile, Liver Function Test (LFT), Kidney Function Test (KFT), Thyroid Profile, HbA1c, Vitamin D";
+                document.getElementById('pThyrocare').value = "999";
+                document.getElementById('pLal').value = "1499";
+                document.getElementById('pAgilus').value = "1299";
+                document.getElementById('pAccuprobe').value = "899";
+                document.getElementById('pKos').value = "949";
+                document.getElementById('pMetropolis').value = "1599";
+            } else {
+                document.getElementById('newSpecimen').value = "Serum / Whole Blood";
+                document.getElementById('newTube').value = "Yellow or Lavender Top Tube";
+                document.getElementById('newFasting').value = "No fasting required";
+                document.getElementById('newParams').value = "Hemoglobin, TLC, RBC, Platelets, Standard Parameters";
+                document.getElementById('pThyrocare').value = "300";
+                document.getElementById('pLal').value = "450";
+                document.getElementById('pAgilus').value = "399";
+                document.getElementById('pAccuprobe').value = "250";
+                document.getElementById('pKos').value = "280";
+                document.getElementById('pMetropolis').value = "499";
+            }
+            alert("✨ AI Auto-Filled parameters successfully!");
+        }
+
+        function renderPatientTests(query = "") {
+            const grid = document.getElementById('patientTestsGrid');
+            grid.innerHTML = "";
+
+            const filtered = testsLibrary.filter(t => {
+                const matchesQuery = t.name.toLowerCase().includes(query.toLowerCase());
+                const matchesCat = activeQuickCategory === 'All' || t.category === activeQuickCategory;
+                return matchesQuery && matchesCat;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-xs">No matching tests or packages found.</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition";
+                
+                let labsHtml = '';
+                for(let [lab, price] of Object.entries(item.prices)) {
+                    labsHtml += `<div class="flex justify-between items-center text-[11px] py-1 border-b border-slate-50 last:border-none">
+                        <span class="font-semibold text-slate-600">${lab}</span>
+                        <span class="font-extrabold text-blue-600">₹${price}</span>
+                    </div>`;
+                }
+
+                const badge = item.category === 'Package' 
+                    ? `<span class="bg-indigo-50 text-indigo-600 text-[9px] font-extrabold px-2.5 py-1 rounded-lg uppercase">Package</span>`
+                    : `<span class="bg-blue-50 text-blue-600 text-[9px] font-extrabold px-2.5 py-1 rounded-lg uppercase">${item.specimen}</span>`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <h3 class="font-bold text-slate-900 text-sm">${item.name}</h3>
+                            ${badge}
+                        </div>
+                        <p class="text-[11px] text-slate-400 mb-3"><i class="fa-solid fa-clock mr-1"></i> Report in ${item.tat}</p>
+                        <div class="bg-slate-50 p-3 rounded-2xl mb-4 space-y-1">${labsHtml}</div>
+                    </div>
+                    <button onclick="openTestModal(${item.id})" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition shadow-sm">
+                        View Details & Book
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterTests() {
+            const query = document.getElementById('testSearchInput').value;
+            renderPatientTests(query);
+        }
+
+        function quickFilter(cat) {
+            activeQuickCategory = cat;
+            renderPatientTests(document.getElementById('testSearchInput').value);
+        }
+
+        function openTestModal(itemId) {
+            const item = testsLibrary.find(t => t.id === itemId);
+            if(!item) return;
+
+            document.getElementById('modalTestTitle').innerText = item.name;
+            document.getElementById('modalSpecimen').innerText = item.specimen;
+            document.getElementById('modalTube').innerText = item.tube;
+            document.getElementById('modalFasting').innerText = item.fasting;
+            document.getElementById('modalTat').innerText = item.tat;
+
+            const paramsContainer = document.getElementById('modalParameters');
+            paramsContainer.innerHTML = "";
+            item.parameters.forEach((param, idx) => {
+                paramsContainer.innerHTML += `<div class="p-2 bg-slate-50 rounded-xl text-slate-700 font-semibold">${idx + 1}. ${param}</div>`;
+            });
+
+            const labsListContainer = document.getElementById('modalLabsList');
+            labsListContainer.innerHTML = "";
+            for(let [lab, price] of Object.entries(item.prices)) {
+                labsListContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-2xl">
+                        <div>
+                            <span class="font-bold text-slate-900 text-xs block">${lab}</span>
+                            <span class="text-[10px] text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>Free Home Pickup</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-extrabold text-blue-600 text-sm">₹${price}</span>
+                            <button onclick="proceedBooking('${item.name}', '${lab}', ${price})" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-xl shadow">Book Now</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('testDetailModal').classList.remove('hidden');
+        }
+
+        function closeTestModal() {
+            document.getElementById('testDetailModal').classList.add('hidden');
+        }
+
+        function proceedBooking(testName, labName, price) {
+            closeTestModal();
+            selectedCartItem = { testName, labName, price };
+            
+            document.getElementById('selectedTestSummary').innerHTML = `
+                <div class="font-extrabold text-blue-900 text-sm">${testName}</div>
+                <div class="text-xs text-blue-700 mt-1">Partner Lab: <b>${labName}</b> | Price: <b class="text-emerald-700">₹${price}</b> (Home Collection Included)</div>
+            `;
+            document.getElementById('bookingSection').classList.remove('hidden');
+            document.getElementById('bookingSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelBookingForm() {
+            document.getElementById('bookingSection').classList.add('hidden');
+            selectedCartItem = null;
+        }
+
+        function confirmBooking() {
+            const name = document.getElementById('patientName').value.trim();
+            const phone = document.getElementById('patientPhone').value.trim();
+            const address = document.getElementById('patientAddress').value.trim();
+            const date = document.getElementById('bookingDate').value;
+            const slot = document.getElementById('bookingSlot').value;
+
+            if(!name || !phone || !address || !date) {
+                alert("Please fill in all required booking details!");
+                return;
+            }
+
+            const bookingId = "TH-" + Math.floor(100000 + Math.random() * 900000);
+            const newBooking = {
+                id: bookingId,
+                patientName: name,
+                phone: phone,
+                address: address,
+                date: date,
+                slot: slot,
+                testName: selectedCartItem.testName,
+                labName: selectedCartItem.labName,
+                price: selectedCartItem.price,
+                phlebo: "Unassigned",
+                status: "Pending"
+            };
+
+            bookings.unshift(newBooking);
+            saveToStorage();
+
+            alert(`Booking Confirmed! Your Booking ID is ${bookingId}`);
+            cancelBookingForm();
+            document.getElementById('patientName').value = "";
+            document.getElementById('patientPhone').value = "";
+            document.getElementById('patientAddress').value = "";
+            document.getElementById('bookingDate').value = "";
+        }
+
+        function checkBookingStatus() {
+            const ph = document.getElementById('checkPhone').value.trim();
+            const resDiv = document.getElementById('statusResult');
+
+            if(!ph || ph.length < 10) {
+                resDiv.innerHTML = `<p class="text-xs text-rose-500 font-bold p-3 bg-rose-50 rounded-xl mt-2">Please enter a valid 10-digit mobile number.</p>`;
+                return;
+            }
+
+            const foundList = bookings.filter(b => b.phone === ph);
+            if(foundList.length > 0) {
+                let html = `<div class="space-y-3 mt-3">`;
+                foundList.forEach(found => {
+                    html += `
+                        <div class="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-xs space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <span class="font-extrabold text-emerald-900 text-sm">Booking ID: ${found.id}</span>
+                                <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-lg font-bold">${found.status}</span>
+                            </div>
+                            <p><b>Patient:</b> ${found.patientName} (${found.phone})</p>
+                            <p><b>Test / Package:</b> ${found.testName} via ${found.labName} (₹${found.price})</p>
+                            <p><b>Address:</b> ${found.address}</p>
+                            <p><b>Slot:</b> ${found.date} | ${found.slot}</p>
+                            <p class="text-blue-700 font-bold"><i class="fa-solid fa-user-nurse mr-1"></i> Assigned Phlebo: ${found.phlebo}</p>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                resDiv.innerHTML = html;
+            } else {
+                resDiv.innerHTML = `<p class="text-xs text-rose-500 font-bold p-3 bg-rose-50 rounded-xl mt-2">No bookings found for this mobile number.</p>`;
+            }
+        }
+
+        // Admin Functions
+        function renderAdminDashboard() {
+            document.getElementById('adminTotalTests').innerText = testsLibrary.length;
+            document.getElementById('adminTotalBookings').innerText = bookings.length;
+            document.getElementById('adminPendingBookings').innerText = bookings.filter(b => b.status === "Pending").length;
+            
+            const totalRev = bookings.reduce((sum, b) => sum + b.price, 0);
+            document.getElementById('adminTotalRevenue').innerText = `₹${totalRev}`;
+
+            renderAdminTestsTable();
+            renderAdminBookings();
+        }
+
+        function renderAdminTestsTable() {
+            const tbody = document.getElementById('adminTestsTableBody');
+            tbody.innerHTML = "";
+
+            if(testsLibrary.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No tests or packages found.</td></tr>`;
+                return;
+            }
+
+            testsLibrary.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                
+                const samplePrice = item.prices["Thyrocare"] || Object.values(item.prices)[0] || 0;
+                const badgeColor = item.category === 'Package' ? 'bg-indigo-50 text-indigo-700' : 'bg-blue-50 text-blue-700';
+
+                tr.innerHTML = `
+                    <td class="p-3.5">
+                        <span class="font-extrabold text-slate-900 block">${item.name}</span>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md uppercase ${badgeColor}">${item.category}</span>
+                    </td>
+                    <td class="p-3.5">
+                        <span class="font-semibold text-slate-600 block">${item.specimen}</span>
+                        <span class="text-[10px] text-slate-400">${item.tube}</span>
+                    </td>
+                    <td class="p-3.5">
+                        <span class="font-bold text-emerald-600">Thyro: ₹${samplePrice}</span>
+                        <span class="text-[10px] text-slate-400 block">+5 other labs</span>
+                    </td>
+                    <td class="p-3.5 text-right space-x-1">
+                        <button onclick="openEditTestModal(${item.id})" class="px-2.5 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl font-bold transition"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                        <button onclick="deleteTestItem(${item.id})" class="px-2.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl font-bold transition"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderAdminBookings() {
+            const tbody = document.getElementById('adminBookingsTableBody');
+            tbody.innerHTML = "";
+            const search = document.getElementById('adminSearchBooking').value.toLowerCase();
+
+            const filtered = bookings.filter(b => b.patientName.toLowerCase().includes(search) || b.id.toLowerCase().includes(search) || b.phone.includes(search));
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No bookings found.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3.5">
+                        <span class="font-extrabold text-blue-600 block">${b.id}</span>
+                        <span class="text-[10px] text-slate-400">${b.date}</span><br>
+                        <span class="text-[10px] font-bold text-slate-500">${b.slot}</span>
+                    </td>
+                    <td class="p-3.5">
+                        <span class="font-extrabold text-slate-900 block">${b.patientName}</span>
+                        <span class="text-[10px] text-slate-500">${b.phone}</span>
+                        <p class="text-[10px] text-slate-600 mt-0.5"><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i>${b.address}</p>
+                    </td>
+                    <td class="p-3.5">
+                        <span class="font-bold text-slate-900 block">${b.testName}</span>
+                        <span class="text-[10px] font-bold text-indigo-600">${b.labName} (₹${b.price})</span>
+                    </td>
+                    <td class="p-3.5">
+                        <select onchange="updatePhlebo('${b.id}', this.value)" class="p-2 bg-slate-100 rounded-xl text-[11px] font-bold border border-slate-200">
+                            <option ${b.phlebo === 'Unassigned' ? 'selected' : ''}>Unassigned</option>
+                            <option ${b.phlebo === 'Ramesh Kumar' ? 'selected' : ''}>Ramesh Kumar</option>
+                            <option ${b.phlebo === 'Amit Sharma' ? 'selected' : ''}>Amit Sharma</option>
+                            <option ${b.phlebo === 'Suresh Verma' ? 'selected' : ''}>Suresh Verma</option>
+                        </select>
+                    </td>
+                    <td class="p-3.5">
+                        <select onchange="updateBookingStatus('${b.id}', this.value)" class="p-2 bg-slate-100 rounded-xl text-[11px] font-bold border border-slate-200">
+                            <option ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option ${b.status === 'Sample Collected' ? 'selected' : ''}>Sample Collected</option>
+                            <option ${b.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                            <option ${b.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </td>
+                    <td class="p-3.5 text-right">
+                        <button onclick="deleteBooking('${b.id}')" class="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updatePhlebo(bId, phleboName) {
+            const b = bookings.find(x => x.id === bId);
+            if(b) {
+                b.phlebo = phleboName;
+                saveToStorage();
+            }
+        }
+
+        function updateBookingStatus(bId, newStatus) {
+            const b = bookings.find(x => x.id === bId);
+            if(b) {
+                b.status = newStatus;
+                saveToStorage();
+                renderAdminDashboard();
+            }
+        }
+
+        function deleteBooking(bId) {
+            if(confirm("Are you sure you want to delete this booking?")) {
+                bookings = bookings.filter(x => x.id !== bId);
+                saveToStorage();
+                renderAdminDashboard();
+            }
+        }
+
+        function deleteTestItem(itemId) {
+            if(confirm("Are you sure you want to delete this test/package from the catalog?")) {
+                testsLibrary = testsLibrary.filter(x => x.id !== itemId);
+                saveToStorage();
+                renderPatientTests();
+                renderAdminDashboard();
+            }
+        }
+
+        function openAddTestModal() {
+            document.getElementById('editTestId').value = "";
+            document.getElementById('modalHeaderTitle').innerText = "Add Test or Health Package";
+            document.getElementById('newTestName').value = "";
+            document.getElementById('pThyrocare').value = "";
+            document.getElementById('pLal').value = "";
+            document.getElementById('pAgilus').value = "";
+            document.getElementById('pAccuprobe').value = "";
+            document.getElementById('pKos').value = "";
+            document.getElementById('pMetropolis').value = "";
+            document.getElementById('newSpecimen').value = "";
+            document.getElementById('newTube').value = "";
+            document.getElementById('newFasting').value = "";
+            document.getElementById('newParams').value = "";
+            document.getElementById('addTestModal').classList.remove('hidden');
+        }
+
+        function openEditTestModal(itemId) {
+            const item = testsLibrary.find(x => x.id === itemId);
+            if(!item) return;
+
+            document.getElementById('editTestId').value = item.id;
+            document.getElementById('modalHeaderTitle').innerText = "Edit Test / Package";
+            setItemType(item.category || "Test");
+
+            document.getElementById('newTestName').value = item.name;
+            document.getElementById('pThyrocare').value = item.prices["Thyrocare"] || "";
+            document.getElementById('pLal').value = item.prices["Dr. Lal PathLabs"] || "";
+            document.getElementById('pAgilus').value = item.prices["Agilus"] || "";
+            document.getElementById('pAccuprobe').value = item.prices["Accuprobe"] || "";
+            document.getElementById('pKos').value = item.prices["Kos Lab"] || "";
+            document.getElementById('pMetropolis').value = item.prices["Metropolis"] || "";
+
+            document.getElementById('newSpecimen').value = item.specimen;
+            document.getElementById('newTube').value = item.tube;
+            document.getElementById('newFasting').value = item.fasting;
+            document.getElementById('newParams').value = item.parameters ? item.parameters.join(', ') : "";
+
+            document.getElementById('addTestModal').classList.remove('hidden');
+        }
+
+        function closeAddTestModal() {
+            document.getElementById('addTestModal').classList.add('hidden');
+        }
+
+        function saveNewTest() {
+            const editId = document.getElementById('editTestId').value;
+            const name = document.getElementById('newTestName').value.trim();
+            const thyro = Number(document.getElementById('pThyrocare').value) || 300;
+            const lal = Number(document.getElementById('pLal').value) || 450;
+            const agilus = Number(document.getElementById('pAgilus').value) || 399;
+            const accuprobe = Number(document.getElementById('pAccuprobe').value) || 250;
+            const kos = Number(document.getElementById('pKos').value) || 280;
+            const metropolis = Number(document.getElementById('pMetropolis').value) || 499;
+
+            const specimen = document.getElementById('newSpecimen').value.trim() || "Serum";
+            const tube = document.getElementById('newTube').value.trim() || "Yellow Top Tube";
+            const fasting = document.getElementById('newFasting').value.trim() || "No fasting required";
+            const paramsStr = document.getElementById('newParams').value.trim();
+
+            if(!name) {
+                alert("Please enter a name.");
+                return;
+            }
+
+            const itemData = {
+                id: editId ? Number(editId) : Date.now(),
+                category: selectedItemType,
+                name: name,
+                specimen: specimen,
+                tube: tube,
+                fasting: fasting,
+                tat: selectedItemType === 'Package' ? '24 Hours' : '12 Hours',
+                parameters: paramsStr ? paramsStr.split(',').map(s => s.trim()) : ["Standard Parameters"],
+                prices: {
+                    "Thyrocare": thyro,
+                    "Dr. Lal PathLabs": lal,
+                    "Agilus": agilus,
+                    "Accuprobe": accuprobe,
+                    "Kos Lab": kos,
+                    "Metropolis": metropolis
+                }
+            };
+
+            if(editId) {
+                const idx = testsLibrary.findIndex(x => x.id === Number(editId));
+                if(idx !== -1) {
+                    testsLibrary[idx] = itemData;
+                }
+                alert("Test/Package updated successfully!");
+            } else {
+                testsLibrary.push(itemData);
+                alert("New item added successfully!");
+            }
+
+            saveToStorage();
+            closeAddTestModal();
+            renderPatientTests();
+            renderAdminDashboard();
+        }
+
+        window.onload = function() {
+            renderPatientTests();
+        };
+    </script>
+</body>
+</html>
